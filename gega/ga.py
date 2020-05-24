@@ -1,8 +1,7 @@
 import numpy
-from copy import copy, deepcopy
 import random
 from math import log10
-from utilities import *
+from gega.utilities import *
 
 # Select the num_parents best individuals
 def select_mating_pool_greedy(pop, fitness, num_parents):

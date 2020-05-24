@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
-import utilities
-import ga
+import gega.utilities as utilities
+import gega.ga as ga
+
 
 class GeneticAlgorithm(object):
     def __init__(self, result_dir, solution_description,

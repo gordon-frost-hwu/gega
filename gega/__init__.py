@@ -1,3 +1,3 @@
-import utilities
-from solution_description import SolutionDescription
-from genetic_algorithm import GeneticAlgorithm
+import gega.utilities
+from gega.solution_description import SolutionDescription
+from gega.genetic_algorithm import GeneticAlgorithm
