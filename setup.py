@@ -11,6 +11,5 @@ setup(
     install_requires=[
         "numpy",         # math library
         "pandas",       # plotting library
-        "unittest",     # unit testing framework
     ]
 )
