@@ -1,6 +1,7 @@
 import numpy
 from copy import copy
 
+
 def generate_indices_randomly(array_size, num_indices):
     """
     Generate a list of unique indexes that are randomly sampled
