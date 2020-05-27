@@ -2,10 +2,10 @@ import pandas as pd
 import numpy as np
 import gega.utilities as utilities
 import gega.ga as ga
-
+from math import log10
 
 class GeneticAlgorithm(object):
-    def __init__(self, result_dir, solution_description,
+    def __init__(self, result_dir, solution_description, termination_fitness_threshold, num_gens_before_termination,
                  population_size=8,
                  generations=400,
                  crossover_probability=0.8,
@@ -24,6 +24,8 @@ class GeneticAlgorithm(object):
         assert hasattr(solution_description, "gene_mutation_prob"), \
             "gene_mutation_prob missing from solution_description"
 
+        self._fitness_threshold = termination_fitness_threshold
+        self._num_gens_before_termination = num_gens_before_termination
         self.solution_description = solution_description
         self._population_size = population_size
         self._max_generations = generations
@@ -83,7 +85,6 @@ class GeneticAlgorithm(object):
         self.f_population_history.write(df.to_string(header=False))
         self.f_population_history.write("\n")
 
-
     def run(self):
         population = self.seed_population()
         print("Initial population:")
@@ -98,6 +99,7 @@ class GeneticAlgorithm(object):
             self.solution_idx += 1
 
         generation_idx = 0
+        generations_since_improvement = 0
 
         self.update_population_logs(generation_idx, population, fitness)
 
@@ -138,14 +140,23 @@ class GeneticAlgorithm(object):
                                                       self.solution_description.atol,
                                                       minimise=self._minimise_fitness):
                     self.update_population_logs(generation_idx, population, fitness)
-                    print("CHILD REPLACED PARENT")
+                    generations_since_improvement = 0   # TODO - move this reset!!!!!
                 self.solution_idx += 1
 
             self.log_solution(call_fitness_function, child, child_fitness)
             self.log_best_in_generation(generation_idx, population, fitness)
             generation_idx += 1
+            print("Generation idx: {0}".format(generation_idx))
+            print("Num generations since improvement: {0}".format(generations_since_improvement))
+            generations_since_improvement += 1
 
             print("")
+
+            # Check for early end conditions
+            fitness_threshold_condition = child_fitness < self._fitness_threshold if self._minimise_fitness else child_fitness > self._fitness_threshold
+            if fitness_threshold_condition and generations_since_improvement > self._num_gens_before_termination:
+                print("EARLY TERMINATION CONDITIONS MET")
+                break
         print("MAX GENERATIONS REACHED!")
 
     def log_best_in_generation(self, generation_idx, population, fitness):
