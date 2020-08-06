@@ -58,7 +58,7 @@ class GeneticAlgorithm(object):
         population = None
         for gene_idx, (lower_bound, upper_bound) in zip(range(self.solution_description.num_genes),
                                                         self.solution_description.gene_init_range):
-            # gene_weights = 10 ** (-1 * np.random.uniform(low=-log10(lower_bound), high=-log10(upper_bound), size=(8, 1)))
+            # gene_weights = 10 ** (-1 * np.random.uniform(low=-log10(lower_bound), high=-log10(upper_bound), size=(self._population_size, 1)))
             gene_weights = np.random.uniform(low=lower_bound, high=upper_bound, size=(self._population_size, 1))
             population = np.concatenate((population, gene_weights), axis=1) if population is not None else gene_weights
         return population
@@ -152,6 +152,7 @@ class GeneticAlgorithm(object):
 
             print("")
 
+            # best_fitness = utilities.get_n_best(fitness, 1, minimise=self._minimise_fitness)[0]
             # Check for early end conditions
             fitness_threshold_condition = child_fitness < self._fitness_threshold if self._minimise_fitness else child_fitness > self._fitness_threshold
             if fitness_threshold_condition and generations_since_improvement > self._num_gens_before_termination:
