@@ -211,15 +211,22 @@ class GeneticAlgorithm(object):
             self.log_solution(call_fitness_function, child, child_fitness)
             self.log_best_in_generation(generation_idx, population, fitness)
             generation_idx += 1
+            print("")
+            print("result directory: {0}".format(self.results_dir))
             print("Generation idx: {0}".format(generation_idx))
             print("Num generations since improvement: {0}".format(generations_since_improvement))
             generations_since_improvement += 1
 
-            print("")
 
             # best_fitness = utilities.get_n_best(fitness, 1, minimise=self._minimise_fitness)[0]
             # Check for early end conditions
-            fitness_threshold_condition = child_fitness < self._fitness_threshold if self._minimise_fitness else child_fitness > self._fitness_threshold
+            print("Checking termination condition, num generations since improvement: {0}".format(generations_since_improvement))
+            best_fitness = fitness[utilities.get_n_best(fitness, 1, minimise=self._minimise_fitness)][0][0]
+            print("best fitness in generation: {0}".format(best_fitness))
+            fitness_threshold_condition = best_fitness < self._fitness_threshold if self._minimise_fitness else best_fitness > self._fitness_threshold
+            print("fitness_threshold_condition: {0}".format(fitness_threshold_condition))
+            print("")
+
             if fitness_threshold_condition and generations_since_improvement > self._num_gens_before_termination:
                 print("EARLY TERMINATION CONDITIONS MET")
                 break
