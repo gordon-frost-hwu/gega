@@ -91,6 +91,32 @@ class GaUnitTests(unittest.TestCase):
         self.assertTrue(np.allclose(fitness_copy[4, :], offspring_fitness[-1, :]))
         self.assertTrue(np.allclose(fitness_copy[5, :], offspring_fitness[1, :]))
 
+    def test_crossover(self):
+        population = np.array([[-0.16300957, -100.35246093, 100.8723527, -0.82950092],
+                               [-0.97824269, -100.79152116, 101.23034209, -0.16263559],
+                               [1.36857229, 101.2070625, -100.49675109, 0.75576418],
+                               [-1.13191167, 101.99955428, -101.32043214, 0.70352007],
+                               [-0.5904881, -101.4635747, -101.74232884, -2.23014166],
+                               [-0.64454314, 100.63685633, 100.7274629, -1.15782712],
+                               [-1.87533838, -100.74503839, -100.63225075, -0.38717283],
+                               [0.40036696, -101.19759659, -100.2538508, -0.40074278]])
+        fitness = np.array([[0.16403259],
+                             [-0.61119397],
+                             [0.30187458],
+                             [1.6466317],
+                             [0.28843214],
+                             [-0.82186789],
+                             [0.63385562],
+                             [-1.11972866]])
+        for i in range(10):
+            parents, parents_fitness = gega.ga.select_mating_pool_tournament(population, fitness, 4)
+            child = gega.ga.crossover_random_chromosones(parents)
+
+            self.assertTrue(abs(child[0]) < 5)
+            self.assertTrue(abs(child[1]) > 50)
+            self.assertTrue(abs(child[2]) > 50)
+            self.assertTrue(abs(child[3]) < 5)
+
 
 if __name__ == '__main__':
 
