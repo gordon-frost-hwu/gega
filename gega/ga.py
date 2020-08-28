@@ -103,7 +103,7 @@ def crossover_random_chromosones(parents):
     assert parents.shape[0] == 2, "number of parents must be 2"
     mask = numpy.array([bool(random.getrandbits(1)) for i in range(parents.shape[1])], dtype=bool)
     child = parents[1, :].copy()
-    numpy.putmask(child, mask, parents[0, mask])
+    numpy.putmask(child, mask, parents[0, :])
     return child
 
 
