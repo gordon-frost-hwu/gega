@@ -4,6 +4,7 @@ import gega.utilities as utilities
 import gega.ga as ga
 from math import log10
 
+
 class GeneticAlgorithm(object):
     def __init__(self, result_dir, solution_description, termination_fitness_threshold, num_gens_before_termination,
                  population_size=8,
@@ -12,7 +13,8 @@ class GeneticAlgorithm(object):
                  mutation_probability=0.2,  # 0.05
                  elitism=True,
                  minimise_fitness=True,
-                 skip_known_solutions=False):
+                 skip_known_solutions=False,
+                 load_past_data=False):
         # __metaclass__ = abc.ABCMeta
 
         # Make sure that we have all the properties of a solution that we need
@@ -34,16 +36,31 @@ class GeneticAlgorithm(object):
         self._elitism = elitism
         self._minimise_fitness = minimise_fitness
         self._skip_known_solutions = skip_known_solutions
+        self._load_past_data = load_past_data
+        self._past_data = None
 
         self.results_dir = result_dir
 
         self.solution_lookup = {}
         self.solution_idx = 0
 
-        # TODO - add file that is the "live" population
-        self.f_evolution_history = open("{0}{1}".format(self.results_dir, "/evolution_history.csv"), "w", 1)
-        self.f_generation_max = open("{0}{1}".format(self.results_dir, "/generation_history.csv"), "w", 1)
-        self.f_population_history = open("{0}{1}".format(self.results_dir, "/population_history.csv"), "w", 1)
+        self._POPULATION_HISTORY_FILENAME = "/population_history.csv"
+        self._EVOLUTION_HISTORY_FILENAME = "/evolution_history.csv"
+        self._GENERATION_HISTORY_FILENAME = "/generation_history.csv"
+        self._LIVE_POPULATION_FILENAME = "/population.csv"
+
+        if self._load_past_data:
+            self._past_data = np.loadtxt("{0}{1}".format(self.results_dir, self._EVOLUTION_HISTORY_FILENAME),
+                                         dtype=float,
+                                         comments='#',
+                                         delimiter="\t")
+        file_operation = "w" if not self._load_past_data else "a"
+        self.f_evolution_history = open("{0}{1}".format(self.results_dir, self._EVOLUTION_HISTORY_FILENAME), file_operation, 1)
+        self.f_generation_max = open("{0}{1}".format(self.results_dir, self._GENERATION_HISTORY_FILENAME), file_operation, 1)
+        self.f_population_history = open("{0}{1}".format(self.results_dir, self._POPULATION_HISTORY_FILENAME), file_operation,
+                                         1)
+
+        # TODO - save to file the GA setup (max generations, solution description, etc.) so that can compare when loading data
 
     # def seed_population(self):
     #     population = None
@@ -78,7 +95,7 @@ class GeneticAlgorithm(object):
         df = pd.DataFrame(population)
         idx = population.shape[1]
         df[idx] = fitness
-        df.to_csv("{0}{1}".format(self.results_dir, "/population.csv"), sep="\t", header=False)
+        df.to_csv("{0}{1}".format(self.results_dir, self._LIVE_POPULATION_FILENAME), sep="\t", header=False)
 
         # Append the population to the population history log
         self.f_population_history.write("====== {0} ======\n".format(generation_id))
@@ -86,22 +103,70 @@ class GeneticAlgorithm(object):
         self.f_population_history.write("\n")
 
     def run(self):
-        population = self.seed_population()
-        print("Initial population:")
-        print(population)
-
-        fitness = np.zeros(shape=(self._population_size, 1))
-        for solution_idx, solution in zip(range(self._population_size), population):
-            solution_fitness = self.calculate_fitness(solution)
-            self.log_solution(1, solution, solution_fitness)
-
-            fitness[solution_idx, 0] = solution_fitness
-            self.solution_idx += 1
-
         generation_idx = 0
         generations_since_improvement = 0
 
-        self.update_population_logs(generation_idx, population, fitness)
+        if not self._load_past_data:
+            population = self.seed_population()
+            print("Initial population:")
+            print(population)
+
+            fitness = np.zeros(shape=(self._population_size, 1))
+            for solution_idx, solution in zip(range(self._population_size), population):
+                solution_fitness = self.calculate_fitness(solution)
+                self.log_solution(1, solution, solution_fitness)
+
+                fitness[solution_idx, 0] = solution_fitness
+                self.solution_idx += 1
+
+            self.update_population_logs(generation_idx, population, fitness)
+        else:
+            # populate the in-memory store of past solutions that have been run
+            for solution_idx in range(self._past_data.shape[0]):
+                indv = self._past_data[solution_idx, :]
+                is_repeat = not bool(indv[1])
+                if not is_repeat:
+                    self.solution_idx += 1
+                    # ignore the solution index and fitness for the solution
+                    self.solution_lookup[tuple(indv[2:-1])] = indv[-1]
+
+            # update the generation info
+            last_fitness = None
+            _past_generations = np.loadtxt("{0}{1}".format(self.results_dir, self._GENERATION_HISTORY_FILENAME),
+                                           comments='#',
+                                           dtype=float,
+                                           delimiter="\t")
+            for gen_idx in range(_past_generations.shape[0]):
+                gen = _past_generations[gen_idx, :]
+                # if gen_idx > self._population_size:
+                generation_idx += 1
+                generations_since_improvement += 1
+
+                curr_fitness = gen[-1]
+                if last_fitness is not None and last_fitness != curr_fitness:
+                    generations_since_improvement = 0
+                last_fitness = curr_fitness
+
+            # TODO - remove this debug
+            # for value in self.solution_lookup.items():
+            #     print(value)
+
+            # Update the population and fitness arrays
+            population_from_file = np.loadtxt("{0}{1}".format(self.results_dir, self._LIVE_POPULATION_FILENAME),
+                                              comments='#',
+                                              dtype=float,
+                                              delimiter="\t")
+            population = population_from_file[:, 1:-1]
+            fitness = population_from_file[:, -1].reshape((self._population_size, 1))
+
+            print("Loading past data, starting from:")
+            print(population)
+            print(fitness)
+            print("solution idx: {0}".format(self.solution_idx))
+            print("generation idx: {0}".format(generation_idx))
+            print("gens since improvement: {0}".format(generations_since_improvement))
+            print("============ STARTING NEW GENERATIONS ===============")
+        # exit(0)
 
         while generation_idx < self._max_generations:
             print("Population:\n{0}".format(population))
@@ -140,21 +205,28 @@ class GeneticAlgorithm(object):
                                                       self.solution_description.atol,
                                                       minimise=self._minimise_fitness):
                     self.update_population_logs(generation_idx, population, fitness)
-                    generations_since_improvement = 0   # TODO - move this reset!!!!!
+                    generations_since_improvement = 0  # TODO - move this reset!!!!!
                 self.solution_idx += 1
 
             self.log_solution(call_fitness_function, child, child_fitness)
             self.log_best_in_generation(generation_idx, population, fitness)
             generation_idx += 1
+            print("")
+            print("result directory: {0}".format(self.results_dir))
             print("Generation idx: {0}".format(generation_idx))
             print("Num generations since improvement: {0}".format(generations_since_improvement))
             generations_since_improvement += 1
 
-            print("")
 
             # best_fitness = utilities.get_n_best(fitness, 1, minimise=self._minimise_fitness)[0]
             # Check for early end conditions
-            fitness_threshold_condition = child_fitness < self._fitness_threshold if self._minimise_fitness else child_fitness > self._fitness_threshold
+            print("Checking termination condition, num generations since improvement: {0}".format(generations_since_improvement))
+            best_fitness = fitness[utilities.get_n_best(fitness, 1, minimise=self._minimise_fitness)][0][0]
+            print("best fitness in generation: {0}".format(best_fitness))
+            fitness_threshold_condition = best_fitness < self._fitness_threshold if self._minimise_fitness else best_fitness > self._fitness_threshold
+            print("fitness_threshold_condition: {0}".format(fitness_threshold_condition))
+            print("")
+
             if fitness_threshold_condition and generations_since_improvement > self._num_gens_before_termination:
                 print("EARLY TERMINATION CONDITIONS MET")
                 break
@@ -170,7 +242,8 @@ class GeneticAlgorithm(object):
 
     def log_solution(self, executed, solution, fitness):
         log_entry_individual = '\t'.join(map(str, solution))
-        log_entry = str(self.solution_idx) + "\t" + str(int(executed)) + "\t" + log_entry_individual + "\t" + str(fitness) + "\n"
+        log_entry = str(self.solution_idx) + "\t" + str(int(executed)) + "\t" + log_entry_individual + "\t" + str(
+            fitness) + "\n"
         self.f_evolution_history.write(log_entry)
         self.solution_lookup[tuple(solution)] = fitness
         self.f_evolution_history.flush()
