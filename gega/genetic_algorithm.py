@@ -75,8 +75,10 @@ class GeneticAlgorithm(object):
         population = None
         for gene_idx, (lower_bound, upper_bound) in zip(range(self.solution_description.num_genes),
                                                         self.solution_description.gene_init_range):
-            # gene_weights = 10 ** (-1 * np.random.uniform(low=-log10(lower_bound), high=-log10(upper_bound), size=(self._population_size, 1)))
-            gene_weights = np.random.uniform(low=lower_bound, high=upper_bound, size=(self._population_size, 1))
+            if self.solution_description.gene_mutation_type == "log":
+                gene_weights = 10 ** (-1 * np.random.uniform(low=-log10(lower_bound), high=-log10(upper_bound), size=(self._population_size, 1)))
+            else:
+                gene_weights = np.random.uniform(low=lower_bound, high=upper_bound, size=(self._population_size, 1))
             population = np.concatenate((population, gene_weights), axis=1) if population is not None else gene_weights
         return population
 
