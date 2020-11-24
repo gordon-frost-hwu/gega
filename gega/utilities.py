@@ -1,5 +1,6 @@
 import numpy
 from copy import copy
+from math import log10, floor
 
 
 def generate_indices_randomly(array_size, num_indices):
@@ -61,3 +62,28 @@ def get_row_index(array, row, atol):
 
 def is_close(array1, array2, atol):
     return numpy.all(abs(array1 - array2) < atol)
+
+
+def check_for_past_result(lookup, individual, atol):
+    closest = None
+    # atol +- 5 of the most significant digit?
+    tolerances = [generate_tolerance(val) for val in individual]
+    print("GENERATED TOLERANCES BEING USING: {0}".format(tolerances))
+    for key in lookup.keys():
+        match = is_close(numpy.array(key), numpy.array(individual), tolerances)
+        if match:
+            print("Individual {0} matched with {1}".format(individual, key))
+            closest = key
+    return closest
+
+
+def generate_tolerance(atol):
+    value, power = round_to_n(atol, 2)
+    return pow(10, -power) * 5
+
+
+def round_to_n(x, n):
+    power = -int(floor(log10(abs(x)))) + (n - 1)
+    value = round(x, power)
+    return value, power
+

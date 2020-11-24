@@ -1,3 +1,4 @@
 import gega.utilities
 from gega.solution_description import SolutionDescription
 from gega.genetic_algorithm import GeneticAlgorithm
+from gega.fitness_by_approximation import FitnessByApproximation

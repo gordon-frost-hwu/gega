@@ -41,6 +41,7 @@ class GeneticAlgorithm(object):
 
         self.results_dir = result_dir
 
+        # Solution to fitness map
         self.solution_lookup = {}
         self.solution_idx = 0
 
@@ -191,7 +192,7 @@ class GeneticAlgorithm(object):
 
             # Check if the individual has been run before
             if self._skip_known_solutions:
-                closest = self.check_for_past_result(child)
+                closest = utilities.check_for_past_result(self.solution_lookup, child, self.solution_description.atol)
                 if closest is not None:
                     # print("Similar individual run in past")
                     # print("new  individual: {0}".format(individual))
@@ -249,12 +250,3 @@ class GeneticAlgorithm(object):
         self.f_evolution_history.write(log_entry)
         self.solution_lookup[tuple(solution)] = fitness
         self.f_evolution_history.flush()
-
-    def check_for_past_result(self, individual):
-        closest = None
-        for key in self.solution_lookup.keys():
-            match = utilities.is_close(np.array(key), np.array(individual), self.solution_description.atol)
-            if match:
-                print("Individual {0} matched with {1}".format(individual, key))
-                closest = key
-        return closest
