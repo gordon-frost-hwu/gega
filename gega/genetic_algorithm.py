@@ -19,6 +19,7 @@ class GeneticAlgorithm(object):
 
         # Make sure that we have all the properties of a solution that we need
         # Note: this does not guaranteed they are the correct/assumed shapes
+        assert population_size > 2, "Population size must be greater than 2"
         assert hasattr(solution_description, "num_genes"), "num_genes missing from solution_description"
         assert hasattr(solution_description, "gene_bounds"), "gene_bounds missing from solution_description"
         assert hasattr(solution_description, "gene_init_range"), "gene_init_range missing from solution_description"

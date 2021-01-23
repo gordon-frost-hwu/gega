@@ -210,7 +210,8 @@ def mutation_gaussian(offspring, solution_description):
 def mutate_log(solution, gene_idx_to_mutate, bounds):
     assert bounds.shape == (2, )
     lower_bound, upper_bound = bounds
-    log_lo, log_up = -log10(lower_bound), -log10(upper_bound)
+    log_lo = -log10(lower_bound) if lower_bound != 0 else 0
+    log_up = -log10(upper_bound) if upper_bound != 0 else 0
     solution[gene_idx_to_mutate] = 10 ** (-1.0 * numpy.random.uniform(low=log_lo, high=log_up))
 
 
